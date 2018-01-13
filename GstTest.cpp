@@ -28,7 +28,7 @@ else
 printf("Built with GStreamer %d.%d.%d %s\n", major, minor, micro, nano_str);
 
 pipeline = gst_pipeline_new("Aquabot_Cam_1");
-source  = gst_element_factory_make("fakesrc","source");
+source  = gst_element_factory_make("v4l2src","source");
 filter = gst_element_factory_make("identity","filter");
 //sink = gst_element_factory_make("updsink","sink");
 
@@ -43,6 +43,8 @@ filter = gst_element_factory_make("identity","filter");
     return -1;
   }
 
+g_object_set(G_OBJECT(source),"device","/dev/video0",NULL);
+
 g_object_set(G_OBJECT(sink),"host","192.168.1.255",NULL);
 g_object_set(G_OBJECT(sink),"port",7331,NULL);
 
@@ -56,6 +58,7 @@ if (!gst_element_link_many (source, filter, sink, NULL)) {
 
 gst_element_set_state(pipeline,GST_STATE_PLAYING);
 
+printf("Playing");
 g_main_loop_run(loop);
 
 gst_element_set_state(pipeline,GST_STATE_NULL);
