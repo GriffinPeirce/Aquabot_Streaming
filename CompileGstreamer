@@ -1,0 +1,4 @@
+#!/bin/bash
+SOURCE=$1
+OUTPUT=$2
+gcc -Wall -o $OUTPUT `pkg-config --cflags gstreamer-1.0` $SOURCE `pkg-config --libs gstreamer-1.0`
