@@ -5,13 +5,16 @@
 
 int main(int argc, char *argv[]){
 
-GstElement *pipeline,*source,*filter,*sink;
+GMainLoop *loop;
+GstElementFactory *factory;
+GstElement *pipeline,*source,*filter,*sink,*element;
 gchar *name;
 
 const gchar *nano_str;
 guint major, minor, micro, nano;
 
 gst_init (&argc, &argv);
+loop = g_main_loop_new(NULL,FALSE);
 
 gst_version(&major,&minor,&micro,&nano);
 
@@ -27,7 +30,18 @@ printf("Built with GStreamer %d.%d.%d %s\n", major, minor, micro, nano_str);
 pipeline = gst_pipeline_new("Aquabot_Cam_1");
 source  = gst_element_factory_make("fakesrc","source");
 filter = gst_element_factory_make("identity","filter");
-sink = gst_element_factory_make("updsink","sink");
+//sink = gst_element_factory_make("updsink","sink");
+
+ factory = gst_element_factory_find ("udpsink");
+  if (!factory) {
+    g_print ("Failed to find factory of type 'udpsink'\n");
+    return -1;
+  }
+  sink = gst_element_factory_create (factory, "udpsink");
+  if (!sink) {
+    g_print ("Failed to create element, even though its factory exists!\n");
+    return -1;
+  }
 
 g_object_set(G_OBJECT(sink),"host","192.168.1.255",NULL);
 g_object_set(G_OBJECT(sink),"port",7331,NULL);
@@ -42,9 +56,12 @@ if (!gst_element_link_many (source, filter, sink, NULL)) {
 
 gst_element_set_state(pipeline,GST_STATE_PLAYING);
 
+g_main_loop_run(loop);
 
+gst_element_set_state(pipeline,GST_STATE_NULL);
 
 gst_object_unref(GST_OBJECT(pipeline));
+g_main_loop_unref(loop);
 //gst_object_unref(GST_OBJECT(source));
 //gst_object_unref(GST_OBJECT(filter));
 //gst_object_unref(GST_OBJECT(sink));
