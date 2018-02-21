@@ -1,18 +1,108 @@
-	<!doctype html>
+<!doctype html>
 
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  
-    <title>Aquabot Control</title>
-      <meta name="description" content="Aquabot Operator Interface">
+<html>
+    <head>
+        <meta charset="utf-8">
+
+        <title>Aquabot Control</title>
+        <meta name="description" content="Aquabot Operator Interface">
         <meta name="author" content="GriffinPeirce">
-	</head>
-		  
-		  <body>
-		 <video width="320" height="240" autoplay>
-		  <source src="http://localhost:7331" type="video/ogg">
-		Your browser does not support the video tag.
-		</video>   
-		</body>
-		    </html>
+        <meta name="author" content="ChuanDu">
+    </head>
+    <style>
+    #container{
+        height: 400px;
+        width: 600px;
+        outline: 1px white;
+        position: absolute;
+    }
+    #up{
+        position: absolute;
+        height: 50px;
+        width: 50px;
+        left:52px;
+        outline: 2px solid black;
+        background-color: white;
+        font-size: 40px;
+    }
+    #down{
+        position: absolute;
+        height: 50px;
+        width: 50px;
+        left: 52px;
+        top: 50px;
+        outline: 2px solid black;
+        background-color: white;
+        font-size: 40px;
+    }
+    #left{
+        position: absolute;
+        height: 50px;
+        width: 50px;
+        top: 50px;
+        outline: 2px solid black;
+        background-color: white;
+        font-size: 40px;
+    }
+    #right{
+        position: absolute;
+        height: 50px;
+        width: 50px;
+        top: 50px;
+        left: 104px;
+        outline: 2px solid black;
+        background-color: white;
+        font-size: 40px;
+    }
+    }
+    </style>
+    
+    <body>
+        <video width="320" height="240" autoplay>
+        <source src="http://localhost:7331" type="video/ogg">
+        Your browser does not support the video tag.
+        </video>
+        
+        <div id="container">
+            <div id="up">&nbsp;&#8593;</div>
+            <div id="down">&nbsp;&#8595;</div>
+            <div id="left">&#8592;</div>
+            <div id="right">&nbsp;&#8594;</div>
+        </div>
+        
+        <script>
+        var up = document.getElementById("up");
+        var down = document.getElementById("down");
+        var left = document.getElementById("left");
+        var right = document.getElementById("right");
+        var container = document.getElementById("container");
+        
+        function detectArrow(e){
+            //alert(e.keyCode);
+            
+            if(e.keyCode == 38){
+                up.style.backgroundColor = "#98FB98";
+            }
+            if(e.keyCode == 40){
+                down.style.backgroundColor = "#98FB98";
+            }
+            if(e.keyCode == 37){
+                left.style.backgroundColor = "#98FB98";
+            }
+            if(e.keyCode == 39){
+                right.style.backgroundColor = "#98FB98";
+            }
+        }
+        
+        function reset(e){
+            up.style.backgroundColor = "white";
+            down.style.backgroundColor = "white";
+            left.style.backgroundColor = "white";
+            right.style.backgroundColor = "white";
+        }
+        document.onkeydown = detectArrow;
+        document.onkeyup = reset;
+        
+        </script>
+    </body>
+</html>
