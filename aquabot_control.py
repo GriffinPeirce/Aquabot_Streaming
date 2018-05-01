@@ -110,7 +110,7 @@ while done == False:
         joystick = pygame.joystick.Joystick(i)
         joystick.init()
 
-        textPrint.print_text(screen, "Joystick {}".format(i) )
+        textPrint.print_text(screen, "Joystick {}".format(i+1) )
         textPrint.indent()
 
         # Get the name from the OS for the controller/joystick
@@ -124,8 +124,12 @@ while done == False:
         textPrint.indent()
 
         for i in range( axes ):
-            axis = joystick.get_axis( i )
-            textPrint.print_text(screen, "Axis {} value: {:>6.3f}".format(i, axis) )
+            if (i == 0):
+                axis = joystick.get_axis( i )
+                textPrint.print_text(screen, "Axis {} value: {:>6.3f}".format(i+1, axis) )
+            else:
+                axis = axis = joystick.get_axis( i )
+                textPrint.print_text(screen, "Axis {} value: {:>6.3f}".format(i+1, axis* -1.0) )
         textPrint.unindent()
 
         buttons = joystick.get_numbuttons()
@@ -134,7 +138,7 @@ while done == False:
 
         for i in range( buttons ):
             button = joystick.get_button( i )
-            textPrint.print_text(screen, "Button {:>2} value: {}".format(i,button) )
+            textPrint.print_text(screen, "Button {:>2} value: {}".format(i+1,button) )
         textPrint.unindent()
 
         textPrint.unindent()
