@@ -1,5 +1,5 @@
 '''
-Top side control software for UBC Aquabot.
+Top side control software for UBC Aquabot (UDP Client).
 The program will take digital and analog inputs to control the claw, twister, and six thrusters.
 
 Version 1:
@@ -7,13 +7,13 @@ Take user inputs
 - keyboard: 'w' (forward) 's' (backward) 'a' (twister left) 'd' (twister right) 'z' (claw open) 'c' (claw close)
 - speed setting for twister and claw (to be decided)
 - Logitech Attack 3 Joystick: yaw, pitch, lift, thruster power
+
+Version 2:
+Make aquabot_control a client that packages input as a string and sends it to server using UDP.
 '''
-#import pygame.joystick as joy
-
 import pygame
+import socket
 
-global key_name
-key_name = ""
 # Define some colors
 BLACK    = (   0,   0,   0)
 WHITE    = ( 255, 255, 255)
@@ -51,8 +51,7 @@ screen = pygame.display.set_mode(size)
 
 pygame.display.set_caption("Aquabot Control")
 
-#Loop until the user clicks the close button on GUIs.
-done = False
+
 
 # Used to manage how fast the screen updates
 clock = pygame.time.Clock()
@@ -64,96 +63,132 @@ pygame.joystick.init()
 textPrint = TextPrint()
 
 # -------- Main Program Loop -----------
-while done == False:
-    # EVENT PROCESSING STEP
-    event = pygame.event.wait()
+def gen_message():
+    '''
+    w = froward [1]
+    s = backward [3]
+    a = twister left [5]
+    d = twister right [7]
+    z = claw open [9]
+    c = claw Close [11]
 
-    if event.type == pygame.QUIT:
-        done = True
+    button 2 = lift [13]
+    button 3 = sink [15]
 
-    # for event in pygame.event.get(): # User did something
-    #     if event.type == pygame.QUIT: # If user clicked close
-    #         done=True # Flag that we are done so we exit this loop
-    #     # Possible joystick actions: JOYAXISMOTION JOYBALLMOTION JOYBUTTONDOWN JOYBUTTONUP JOYHATMOTION
+    axis x = yaw (negative = left, positive = right) [17]
+    axis y = pitch (negative = up, positive = down) [19]
+    axis z = thruster power (negative = less, positive = more) [21]
+    '''
 
-    if event.type in (pygame.KEYDOWN, pygame.KEYUP):
-        # gets the key name
-        key_name = pygame.key.name(event.key)
-        # converts to uppercase the key name
-        key_name = key_name.upper()
+    msg = list("w0s0a0d0z0c02030x0y0z0")
+    global key_name
+    key_name = ""
+    #Loop until the user clicks the close button on GUIs.
+    done = False
 
-        if event.type == pygame.KEYDOWN:
-            print (u'"{}" key pressed'.format(key_name))
-        if event.type == pygame.KEYUP:
-            print (u'"{}" key released'.format(key_name))
-            key_name = ""
+    while done == False:
+        # EVENT PROCESSING STEP
+        event = pygame.event.wait()
 
-    if event.type == pygame.JOYBUTTONDOWN:
-        print("Joystick button pressed.")
-    if event.type == pygame.JOYBUTTONUP:
-        print("Joystick button released.")
+        if event.type == pygame.QUIT:
+            done = True
 
-    # DRAWING STEP
-    # First, clear the screen to white. Don't put other drawing commands
-    # above this, or they will be erased with this command.
-    screen.fill(WHITE)
-    textPrint.reset()
+        # for event in pygame.event.get(): # User did something
+        #     if event.type == pygame.QUIT: # If user clicked close
+        #         done=True # Flag that we are done so we exit this loop
+        #     # Possible joystick actions: JOYAXISMOTION JOYBALLMOTION JOYBUTTONDOWN JOYBUTTONUP JOYHATMOTION
 
-    # Get count of joysticks
-    joystick_count = pygame.joystick.get_count()
+        if event.type in (pygame.KEYDOWN, pygame.KEYUP):
+            # gets the key name
+            key_name = pygame.key.name(event.key)
+            # converts to uppercase the key name
+            key_name = key_name.upper()
 
-    textPrint.print_text(screen, "Number of joysticks: {}".format(joystick_count) )
-    textPrint.indent()
+            if event.type == pygame.KEYDOWN:
+                print (u'"{}" key pressed'.format(key_name))
+            if event.type == pygame.KEYUP:
+                print (u'"{}" key released'.format(key_name))
+                key_name = ""
 
-    # For each joystick:
-    for i in range(joystick_count):
-        joystick = pygame.joystick.Joystick(i)
-        joystick.init()
+        if event.type == pygame.JOYBUTTONDOWN:
+            print("Joystick button pressed.")
+        if event.type == pygame.JOYBUTTONUP:
+            print("Joystick button released.")
 
-        textPrint.print_text(screen, "Joystick {}".format(i+1) )
+        # DRAWING STEP
+        # First, clear the screen to white. Don't put other drawing commands
+        # above this, or they will be erased with this command.
+        screen.fill(WHITE)
+        textPrint.reset()
+
+        # Get count of joysticks
+        joystick_count = pygame.joystick.get_count()
+
+        textPrint.print_text(screen, "Number of joysticks: {}".format(joystick_count) )
         textPrint.indent()
 
-        # Get the name from the OS for the controller/joystick
-        name = joystick.get_name()
-        textPrint.print_text(screen, "Joystick name: {}".format(name) )
+        # For each joystick:
+        for i in range(joystick_count):
+            joystick = pygame.joystick.Joystick(i)
+            joystick.init()
 
-        # Usually axis run in pairs, up/down for one, and left/right for
-        # the other.
-        axes = joystick.get_numaxes()
-        textPrint.print_text(screen, "Number of axes: {}".format(axes) )
-        textPrint.indent()
+            textPrint.print_text(screen, "Joystick {}".format(i+1) )
+            textPrint.indent()
 
-        for i in range( axes ):
-            if (i == 0):
-                axis = joystick.get_axis( i )
-                textPrint.print_text(screen, "Axis {} value: {:>6.3f}".format(i+1, axis) )
-            else:
-                axis = axis = joystick.get_axis( i )
-                textPrint.print_text(screen, "Axis {} value: {:>6.3f}".format(i+1, axis* -1.0) )
-        textPrint.unindent()
+            # Get the name from the OS for the controller/joystick
+            name = joystick.get_name()
+            textPrint.print_text(screen, "Joystick name: {}".format(name) )
 
-        buttons = joystick.get_numbuttons()
-        textPrint.print_text(screen, "Number of buttons: {}".format(buttons) )
-        textPrint.indent()
+            # Usually axis run in pairs, up/down for one, and left/right for
+            # the other.
+            axes = joystick.get_numaxes()
+            textPrint.print_text(screen, "Number of axes: {}".format(axes) )
+            textPrint.indent()
 
-        for i in range( buttons ):
-            button = joystick.get_button( i )
-            textPrint.print_text(screen, "Button {:>2} value: {}".format(i+1,button) )
-        textPrint.unindent()
+            for i in range( axes ):
+                if (i == 0):
+                    axis = joystick.get_axis( i )
+                    textPrint.print_text(screen, "Axis {} value: {:>6.3f}".format(i+1, axis) )
+                else:
+                    axis = axis = joystick.get_axis( i )
+                    textPrint.print_text(screen, "Axis {} value: {:>6.3f}".format(i+1, axis* -1.0) )
+            textPrint.unindent()
 
-        textPrint.unindent()
-        textPrint.unindent()
-        textPrint.print_text(screen, "Key pressed: {}".format(key_name) )
+            buttons = joystick.get_numbuttons()
+            textPrint.print_text(screen, "Number of buttons: {}".format(buttons) )
+            textPrint.indent()
 
-    # ALL CODE TO DRAW SHOULD GO ABOVE THIS COMMENT
+            for i in range( buttons ):
+                #get_button: current button state (returns bool)
+                button = joystick.get_button( i )
+                textPrint.print_text(screen, "Button {:>2} value: {}".format(i+1,button) )
+            textPrint.unindent()
 
-    # Go ahead and update the screen with what we've drawn.
-    pygame.display.flip()
+            textPrint.unindent()
+            textPrint.unindent()
+            textPrint.print_text(screen, "Key pressed: {}".format(key_name) )
 
-    # Limit to 20 frames per second
-    clock.tick(20)
+        # ALL CODE TO DRAW SHOULD GO ABOVE THIS COMMENT
+
+        # Go ahead and update the screen with what we've drawn.
+        pygame.display.flip()
+
+        #generate message
+
+        # Limit to 20 frames per second
+        clock.tick(20)
+
+        string_msg = "".join(msg)
+        print(string_msg)
+        #return msg
+
+#def main():
 
 # Close the window and quit.
 # If you forget this line, the program will 'hang'
 # on exit if running from IDLE.
-pygame.quit ()
+#pygame.quit()
+
+gen_message()
+# if __name__ == '__main__':
+#     main()
