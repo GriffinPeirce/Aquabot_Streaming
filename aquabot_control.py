@@ -241,10 +241,10 @@ def gen_message():
 
 #udp client
 def main():
-    host = "127.0.0.1"
+    host = "192.168.1.100"
     port = 5001 #different port from server (we will create server ourselves)
 
-    server = ("127.0.0.1", 5000) #this machine, port
+    server = ("192.168.1.101", 5000) #pi
 
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.bind((host, port))
