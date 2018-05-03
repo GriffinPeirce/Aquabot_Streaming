@@ -14,6 +14,11 @@ Make aquabot_control a client that packages input as a string and sends it to se
 import pygame
 import socket
 
+debug = True
+
+key_commands = ["W", "S", "A", "D", "Z", "C"] #Q for quit
+joy_dict = {"2":"13", "3": "15", "X":"17", "Y":"19", "Z":"21"}
+
 # Define some colors
 BLACK    = (   0,   0,   0)
 WHITE    = ( 255, 255, 255)
@@ -42,7 +47,6 @@ class TextPrint:
     def unindent(self):
         self.x -= 10
 
-
 pygame.init()
 
 # Set the width and height of the screen [width,height]
@@ -50,8 +54,6 @@ size = [500, 700]
 screen = pygame.display.set_mode(size)
 
 pygame.display.set_caption("Aquabot Control")
-
-
 
 # Used to manage how fast the screen updates
 clock = pygame.time.Clock()
@@ -78,12 +80,17 @@ def gen_message():
     axis x = yaw (negative = left, positive = right) [17]
     axis y = pitch (negative = up, positive = down) [19]
     axis z = thruster power (negative = less, positive = more) [21]
+
+    example message: "W0S0A0D0Z0C02030X0Y0Z0"
     '''
 
-    msg = list("w0s0a0d0z0c02030x0y0z0")
+    msg = list("W0S0A0D0Z0C02030X0Y0Z0")
+    #dictionary for joystick
+
     global key_name
     key_name = ""
     #Loop until the user clicks the close button on GUIs.
+    global done
     done = False
 
     while done == False:
@@ -92,6 +99,7 @@ def gen_message():
 
         if event.type == pygame.QUIT:
             done = True
+            #pygame.quit()
 
         # for event in pygame.event.get(): # User did something
         #     if event.type == pygame.QUIT: # If user clicked close
@@ -105,9 +113,26 @@ def gen_message():
             key_name = key_name.upper()
 
             if event.type == pygame.KEYDOWN:
-                print (u'"{}" key pressed'.format(key_name))
+                counter = 1
+                for cmd in (key_commands):
+                    if debug :
+                        #print(key_name)
+                        print(cmd)
+
+                    if key_name == cmd:
+                        print (u'"{}" key pressed'.format(key_name))
+                        print(counter)
+                        msg[counter] = "1"
+                    counter += 2
+
+
             if event.type == pygame.KEYUP:
-                print (u'"{}" key released'.format(key_name))
+                counter = 1
+                for cmd in (key_commands):
+                    if key_name == key_commands:
+                        print (u'"{}" key pressed'.format(key_name))
+                        msg[counter] = "0"
+                    counter += 2
                 key_name = ""
 
         if event.type == pygame.JOYBUTTONDOWN:
@@ -148,10 +173,20 @@ def gen_message():
             for i in range( axes ):
                 if (i == 0):
                     axis = joystick.get_axis( i )
+                    msg[int(joy_dict.get("X"))] =  ("%.5f" %axis)
                     textPrint.print_text(screen, "Axis {} value: {:>6.3f}".format(i+1, axis) )
+
                 else:
                     axis = axis = joystick.get_axis( i )
                     textPrint.print_text(screen, "Axis {} value: {:>6.3f}".format(i+1, axis* -1.0) )
+
+                    axis = axis * -1.0
+
+                    if (i == 1):
+                        msg[int(joy_dict.get("Y"))] = ("%.5f" %axis)
+                    if (i == 2):
+                        msg[int(joy_dict.get("Z"))] = ("%.5f" %axis)
+
             textPrint.unindent()
 
             buttons = joystick.get_numbuttons()
@@ -161,9 +196,20 @@ def gen_message():
             for i in range( buttons ):
                 #get_button: current button state (returns bool)
                 button = joystick.get_button( i )
+                #button 2 or button 3
                 textPrint.print_text(screen, "Button {:>2} value: {}".format(i+1,button) )
-            textPrint.unindent()
 
+                if button:
+                    if i == 1:
+                        #get button 2
+                        msg[int(joy_dict.get("2"))] = "1"
+                    elif i == 2:
+                        #get button 3
+                        msg[int(joy_dict.get("3"))] = "1"
+                    else:
+                        continue
+
+            textPrint.unindent()
             textPrint.unindent()
             textPrint.unindent()
             textPrint.print_text(screen, "Key pressed: {}".format(key_name) )
@@ -179,16 +225,37 @@ def gen_message():
         clock.tick(20)
 
         string_msg = "".join(msg)
-        print(string_msg)
-        #return msg
+        print(string_msg) #if no new message, keep current state
+        return string_msg
 
-#def main():
+#udp client
+def main():
+    host = "127.0.0.1"
+    port = 5001 #different port from server (we will create server ourselves)
+
+    server = ("127.0.0.1", 5000) #this machine, port
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.bind((host, port))
+
+    message = gen_message()
+
+    while done != True :
+        s.sendto(message.encode('utf-8'), server)
+        data, addr = s.recvfrom(1024)
+        data = data.decode('utf-8')
+        print("Received from server: " + data)
+        message = gen_message()
+
+    s.close()
+    pygame.quit()
+
 
 # Close the window and quit.
 # If you forget this line, the program will 'hang'
 # on exit if running from IDLE.
 #pygame.quit()
 
-gen_message()
+main()
 # if __name__ == '__main__':
 #     main()
