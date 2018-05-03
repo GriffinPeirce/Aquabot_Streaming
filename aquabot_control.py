@@ -96,6 +96,7 @@ def gen_message():
     while done == False:
         # EVENT PROCESSING STEP
         event = pygame.event.wait()
+        pygame.event.set_blocked(pygame.MOUSEMOTION)
 
         if event.type == pygame.QUIT:
             done = True
@@ -114,26 +115,36 @@ def gen_message():
 
             if event.type == pygame.KEYDOWN:
                 counter = 1
-                for cmd in (key_commands):
-                    if debug :
-                        #print(key_name)
-                        print(cmd)
+                if key_name in key_commands:
+                    for cmd in (key_commands):
+                        if debug :
+                            #print(key_name)
+                            print(cmd)
 
-                    if key_name == cmd:
-                        print (u'"{}" key pressed'.format(key_name))
-                        print(counter)
-                        msg[counter] = "1"
-                    counter += 2
+                        if key_name == cmd:
+                            print (u'"{}" key pressed'.format(key_name))
+                            #print(counter)
+                            msg[counter] = "1"
+                        counter += 2
+                else:
+                    #msg = ""
+                    #return msg 
+                    continue
 
 
             if event.type == pygame.KEYUP:
                 counter = 1
-                for cmd in (key_commands):
-                    if key_name == key_commands:
-                        print (u'"{}" key pressed'.format(key_name))
-                        msg[counter] = "0"
-                    counter += 2
-                key_name = ""
+                if key_name in key_commands:
+                    for cmd in (key_commands):
+                        if key_name == key_commands:
+                            print (u'"{}" key released'.format(key_name))
+                            msg[counter] = "0"
+                        counter += 2
+                    key_name = ""
+                else:
+                    #msg = ""
+                    #return msg
+                    continue
 
         if event.type == pygame.JOYBUTTONDOWN:
             print("Joystick button pressed.")
@@ -250,11 +261,6 @@ def main():
     s.close()
     pygame.quit()
 
-
-# Close the window and quit.
-# If you forget this line, the program will 'hang'
-# on exit if running from IDLE.
-#pygame.quit()
 
 main()
 # if __name__ == '__main__':
