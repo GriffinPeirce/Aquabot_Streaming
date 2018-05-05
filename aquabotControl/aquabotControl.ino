@@ -1,7 +1,7 @@
 #include "Definitions.h"
 #include <Servo.h>
 
-//W0S0A0D0Z0C02030X0.1357Y-0.999T-0.5123R
+//W0S0A0D0Z0C02030X0.1357Y-0.999T-0.5123R;
 String userInput;
 
 bool forward, reverse, lift, sink;
@@ -14,6 +14,7 @@ Servo thruster1, thruster2, thruster3, thruster4, thruster5, thruster6;
 void setup() {
   Serial.begin(9600);
 
+  //THRUSTER SETUP
   //pulse width in microseconds
   thruster1.attach(esc1,maxReverse,maxForward);
   thruster2.attach(esc2,maxReverse,maxForward);
@@ -22,7 +23,15 @@ void setup() {
   thruster5.attach(esc5,maxReverse,maxForward);
   thruster6.attach(esc6,maxReverse,maxForward);
 
-// write stop to all ESC
+  //TWISTER SETUP
+  pinMode(twisterPwm,OUTPUT); 
+  pinMode(twisterDir,OUTPUT); 
+
+  //CLAW SETUP
+  pinMode(clawStep,OUTPUT); 
+  pinMode(clawDir,OUTPUT); 
+  
+  // write stop to all ESC
   thruster1.writeMicroseconds(stopped);
   thruster2.writeMicroseconds(stopped);
   thruster3.writeMicroseconds(stopped);
@@ -30,7 +39,7 @@ void setup() {
   thruster5.writeMicroseconds(stopped);
   thruster6.writeMicroseconds(stopped);
 
-  delay(1000);
+  delay(1);
 }
 
 void loop() {
@@ -39,8 +48,19 @@ void loop() {
      userInput = Serial.readStringUntil(';');
      Serial.println(userInput);
      parseUserInput(userInput);
+
+     if(twistLeft || twistRight) {
+        twisterControl(twistLeft, twistRight);
+     } else if (clawOpen || clawClose) {
+        clawControl(clawOpen, clawClose);
+     } else {
+        thrusterControl(forward, reverse, lift, sink, yaw, pitch, normThrustLevel); 
+     }
+    
+    //allow time to perform action
+     delay(1);
+    }
   }
-}
 
 void parseUserInput(String userInput){
   /* example input: 
@@ -80,7 +100,7 @@ void parseUserInput(String userInput){
      }
      Serial.println();
 
-     Serial.println("thrustLevel: " + String(thrustLevel) + "normalized -> " + String(normThrustLevel));
+     Serial.println("thrustLevel: " + String(thrustLevel) + "  normalized: " + String(normThrustLevel));
      Serial.println("forward: " + String(forward));
      Serial.println("reverse: " + String(reverse));
      Serial.println("lift: " + String(lift));
@@ -131,12 +151,89 @@ float normalizeThrust(float inputThrust){
   return (inputThrust + 1.0)/2.0;
 }
 
-//void thrusterControl(bool forward, bool reverse, bool lift, bool sink, float yaw, float pitch, float normThrustLevel){
-//  //if W = 1, turn on thruster 1,2,3,4 in the forward direction
-//  if(forward){
-//    
-//  }
-//}
+void thrusterControl(bool forward, bool reverse, bool lift, bool sink, float yaw, float pitch, float normThrustLevel){
+  //if W = 1, turn on thruster 1,2,3,4 in the forward direction
+  int signal = 1500;
+  
+  if(forward || reverse){
+    thruster5.writeMicroseconds(stopped);
+    thruster6.writeMicroseconds(stopped);
+
+    if (forward) {
+      signal = normThrustLevel * range + stopped;
+    } 
+    if (reverse){
+      signal = stopped - normThrustLevel * range;
+    }   
+    
+    thruster1.writeMicroseconds(signal);
+    thruster2.writeMicroseconds(signal);
+    thruster3.writeMicroseconds(signal);
+    thruster4.writeMicroseconds(signal);
+
+  } else if (lift || sink) {
+    thruster1.writeMicroseconds(stopped);
+    thruster2.writeMicroseconds(stopped);
+    thruster3.writeMicroseconds(stopped);
+    thruster4.writeMicroseconds(stopped);    
+    
+    if(lift) {
+      signal = normThrustLevel * range + stopped;
+    } 
+    if (sink) {
+      signal = stopped - normThrustLevel * range;
+    }
+    thruster5.writeMicroseconds(signal);
+    thruster6.writeMicroseconds(signal);
+  }  else {
+      rovYaw(yaw);
+      rovPitch(pitch);
+  }
+}
+
+
+void rovYaw(float yaw){
+  int signal = 1500;
+  
+  thruster5.writeMicroseconds(stopped);
+  thruster6.writeMicroseconds(stopped);
+
+  signal = abs(yaw) * range;
+
+  //yaw right: Thruster 1,2 (positive) Thruster 3,4 (negative)
+  if (yaw > 0.0) {
+    thruster1.writeMicroseconds(stopped + signal);
+    thruster2.writeMicroseconds(stopped + signal);
+    thruster3.writeMicroseconds(stopped - signal);
+    thruster4.writeMicroseconds(stopped - signal);
+  } else{
+    thruster1.writeMicroseconds(stopped - signal);
+    thruster2.writeMicroseconds(stopped - signal);
+    thruster3.writeMicroseconds(stopped + signal);
+    thruster4.writeMicroseconds(stopped + signal);
+  }   
+}
+
+void rovPitch(float pitch) {
+  int signal = 1500;
+
+  thruster1.writeMicroseconds(stopped);
+  thruster2.writeMicroseconds(stopped);
+  thruster3.writeMicroseconds(stopped);
+  thruster4.writeMicroseconds(stopped);
+
+  signal = abs(pitch) * range;
+
+  //pitch down: thruster5 (pos) thruster6 (neg)
+  if(pitch > 1.0){
+  thruster5.writeMicroseconds(stopped + signal);
+  thruster6.writeMicroseconds(stopped - signal);
+  } else {
+  thruster5.writeMicroseconds(stopped - signal);
+  thruster6.writeMicroseconds(stopped + signal);    
+  }
+}
+
 
 //==== CLAW CONTROL ====
 /*  DRV8825 Stepper Motor Driver Carrier, High Current
@@ -145,6 +242,20 @@ float normalizeThrust(float inputThrust){
  *  Z = claw open
  *  C = claw close
  */
+void clawControl(bool clawOpen, bool clawClose) {
+    //reverse direction if needed
+    if(clawOpen) {
+      digitalWrite(clawDir, HIGH);
+    } else {
+      digitalWrite(clawDir, LOW);
+     }
+     for(int i = 0; i < clawCycle; i++){
+        digitalWrite(clawStep, HIGH);
+        delay(0.5);
+        digitalWrite(clawStep, LOW);
+        delay(0.5);
+      }
+    }
 
 
 //==== TWISTER CONTROL ====
@@ -152,7 +263,27 @@ float normalizeThrust(float inputThrust){
  *  https://www.robotshop.com/media/files/PDF/user-manual-md10c-v2.pdf
  *  A = twister left
  *  D = twister right
+ *  
+ *  yellow wire: PWM 30
+ *  blue wire: PWM 29
+ *  Control via SIGN-MAGNITUDE MODE
+ *  " For sign-magnitude PWM operation, 2 control signals are used
+ *  to control the speed and direction of the motor. PWM is feed to the PWM pin to control
+ *  the speed while DIR pin is used to control the direction of the motor."
  */
+void twisterControl(bool twistLeft, bool twistRight) {
+  //digitalWrite(twisterPwm,HIGH);
+  
+  if (twistLeft) {
+    digitalWrite(twisterDir,LOW);
+  } else {
+    //twist right
+    digitalWrite(twisterDir,HIGH);
+  }
+    
+    analogWrite(twisterPwm, twisterSpeed);
+    delay(0.5);
+}
 
 //==== helper methods ====
 bool charToBool(char inputChar){

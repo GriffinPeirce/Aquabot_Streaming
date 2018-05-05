@@ -11,7 +11,7 @@
 #define stopped 1500
 #define minDeadBand 1475
 #define maxDeadBand 1525
-#define range 375
+#define range 400
 
 #define forwardStat 1
 #define reverseStat 3
@@ -22,4 +22,12 @@
 #define liftStat 13
 #define sinkStat 15
 
+#define twisterPwm 30
+#define twisterDir 29
+#define twisterSpeed 120
+#define twisterStop 0
+
+#define clawStep 24
+#define clawDir 12
+#define clawCycle 200
 
