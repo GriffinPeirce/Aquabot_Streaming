@@ -8,11 +8,11 @@ bool forward, reverse, lift, sink;
 bool twistLeft, twistRight, clawOpen, clawClose;
 float yaw, pitch, thrustLevel;
 float normThrustLevel = 0;
- 
+
 Servo thruster1, thruster2, thruster3, thruster4, thruster5, thruster6;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(57600);
 
   //THRUSTER SETUP
   //pulse width in microseconds
@@ -74,8 +74,6 @@ void parseUserInput(String userInput){
    userInput.toCharArray(inputArray, userInputLen);
 
    //extract all status values from input array
-  
-   //convert from ASCII to float
    
    forward = charToBool(inputArray[forwardStat]);
    reverse = charToBool(inputArray[reverseStat]);

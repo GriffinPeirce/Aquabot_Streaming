@@ -17,7 +17,7 @@ import socket
 debug = True
 
 key_commands = ["W", "S", "A", "D", "Z", "C"] #Q for quit
-joy_dict = {"2":"3", "K": "15", "X":"17", "Y":"19", "Z":"21"}
+joy_dict = {"2":"13", "3": "15", "X":"17", "Y":"19", "Z":"21"}
 
 # Define some colors
 BLACK    = (   0,   0,   0)
@@ -85,7 +85,7 @@ def gen_message():
     R = message ending character
     '''
 
-    msg = list("W0S0A0D0Z0C0S0L0X0Y0T0R;")
+    msg = list("W0S0A0D0Z0C02030X0Y0T0R;")
     #dictionary for joystick
 
     global key_name
@@ -238,14 +238,16 @@ def gen_message():
 
         string_msg = "".join(msg)
         print(string_msg) #if no new message, keep current state
-        return msg
+        return string_msg
 
 #udp client
 def main():
-    host = "192.168.1.100"
+    #host = "192.168.1.100"
+    host = "127.0.0.1"
     port = 5001 #different port from server (we will create server ourselves)
 
-    server = ("192.168.1.101", 5000) #pi
+   # server = ("192.168.1.101", 5000) #pi
+    server = ("127.0.0.1", 5000)
 
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.bind((host, port))
