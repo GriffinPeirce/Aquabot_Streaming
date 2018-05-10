@@ -12,7 +12,7 @@ float normThrustLevel = 0;
 Servo thruster1, thruster2, thruster3, thruster4, thruster5, thruster6;
 
 void setup() {
-  Serial.begin(57600);
+  Serial.begin(9600);
 
   //THRUSTER SETUP
   //pulse width in microseconds
@@ -51,16 +51,22 @@ void loop() {
 
      if(twistLeft || twistRight) {
         twisterControl(twistLeft, twistRight);
-     } else if (clawOpen || clawClose) {
-        clawControl(clawOpen, clawClose);
-     } else {
-        thrusterControl(forward, reverse, lift, sink, yaw, pitch, normThrustLevel); 
+     } else{
+        analogWrite(twisterPwm, twisterStop);
      }
-    
+
+     if (clawOpen || clawClose) {
+       clawControl(clawOpen, clawClose);
+     } else {
+       digitalWrite(clawStep, LOW);
+     }
+     
+     thrusterControl(forward, reverse, lift, sink, yaw, pitch, normThrustLevel); 
+      
     //allow time to perform action
-     delay(1);
-    }
+     delayMicroseconds(250);
   }
+}
 
 void parseUserInput(String userInput){
   /* example input: 
@@ -184,8 +190,12 @@ void thrusterControl(bool forward, bool reverse, bool lift, bool sink, float yaw
     thruster5.writeMicroseconds(signal);
     thruster6.writeMicroseconds(signal);
   }  else {
-      rovYaw(yaw);
-      rovPitch(pitch);
+      if(abs(yaw) > abs(pitch)){
+        rovYaw(yaw);
+      }
+      else{
+        rovPitch(pitch);
+    }
   }
 }
 
@@ -204,7 +214,7 @@ void rovYaw(float yaw){
     thruster2.writeMicroseconds(stopped + signal);
     thruster3.writeMicroseconds(stopped - signal);
     thruster4.writeMicroseconds(stopped - signal);
-  } else{
+  } else {
     thruster1.writeMicroseconds(stopped - signal);
     thruster2.writeMicroseconds(stopped - signal);
     thruster3.writeMicroseconds(stopped + signal);
@@ -223,12 +233,13 @@ void rovPitch(float pitch) {
   signal = abs(pitch) * range;
 
   //pitch down: thruster5 (pos) thruster6 (neg)
+  //if(pitch > 1.0){
   if(pitch > 1.0){
-  thruster5.writeMicroseconds(stopped + signal);
-  thruster6.writeMicroseconds(stopped - signal);
+    thruster5.writeMicroseconds(stopped + signal);
+    thruster6.writeMicroseconds(stopped - signal);
   } else {
-  thruster5.writeMicroseconds(stopped - signal);
-  thruster6.writeMicroseconds(stopped + signal);    
+    thruster5.writeMicroseconds(stopped - signal);
+    thruster6.writeMicroseconds(stopped + signal);    
   }
 }
 
@@ -246,14 +257,14 @@ void clawControl(bool clawOpen, bool clawClose) {
       digitalWrite(clawDir, HIGH);
     } else {
       digitalWrite(clawDir, LOW);
-     }
+    }
      for(int i = 0; i < clawCycle; i++){
         digitalWrite(clawStep, HIGH);
-        delay(0.5);
+        delayMicroseconds(250);
         digitalWrite(clawStep, LOW);
-        delay(0.5);
+        delayMicroseconds(250);
       }
-    }
+  }
 
 
 //==== TWISTER CONTROL ====
@@ -280,7 +291,7 @@ void twisterControl(bool twistLeft, bool twistRight) {
   }
     
     analogWrite(twisterPwm, twisterSpeed);
-    delay(0.5);
+    delayMicroseconds(250);
 }
 
 //==== helper methods ====

@@ -1,4 +1,4 @@
-#define DEBUG 1
+#define DEBUG 0
 #define esc1 2
 #define esc2 3
 #define esc3 4

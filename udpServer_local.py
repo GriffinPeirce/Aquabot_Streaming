@@ -7,7 +7,7 @@ import time
 
 
 
-baudrate = 57600
+baudrate = 9600
 
 #==== find COM port for Teensy ====
 def get_teensy_port():
